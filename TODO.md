@@ -1,0 +1,5 @@
+- [ ] Design the project structure
+- [ ] Clean up files and create a `utils` component
+- [ ] Setup pre-commit
+- [ ] Complete Writing tests
+- [ ] Setup running tests on PR
