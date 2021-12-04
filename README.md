@@ -30,16 +30,26 @@ Disclaimer - This is a very preliminary design and could be subject to change as
 
 ### How will the data be stored? [WIP]
 
-The idea is mostly similar to how Kafka does it and will try my best to explain it here. 
+The idea is mostly similar to how Kafka does it and will try my best to explain it here. The file storage
+engine is going to have two sets of files. Namely - `index.katar` and `logs.katar`.
 
-Every entry is considered a log. A log will be stored in log files. Format of the a single log entry would be -
+The `index.katar` file would be storing mapping from a value called the `offset` to the byte location of
+the message of that specific offset in the `logs.katar` file. `log.katar` would be simple in a way that it would be an append only file storing two data points coupled togeather. `<N><M>`, where N is the length in bytes of the message M.
 
-```c
-<48bit INT><64bit INT><Message>
+A sample of both files is shown below
+
+`index.katar`
+```
+00001 B1
+00002 B2
+00003 B3
 ```
 
-The 48bit integer here is the length of the message including the offset which is the 64bit integer. The offset would direct towards the start position of the log i.e. the 48 bit integer with respect to the first message received. A topic can have many log files. A log file would be named with the offset integer of the first log entry.
-
+`logs.katar`
+```
+N1M1N2M2N3M3
+B1  B2  B3    <-- Byte locations
+```
 
 
 ## API Design
