@@ -1,5 +1,5 @@
-def int_to_bytes(x: int) -> bytes:
-    return x.to_bytes(4, "big")
+def int_to_bytes(value: int, byte_size: int) -> bytes:
+    return value.to_bytes(byte_size, "big")
 
 
 def int_from_bytes(xbytes: bytes) -> int:
