@@ -37,3 +37,35 @@ class BaseInteractor:
         except Exception as e:
             raise e
         return offset_location, self.filesize
+
+    def all_segments(self, topic_dir):
+        try:
+            katar_files = sorted(
+                [
+                    int(file.name.split(".")[0])
+                    for file in Path(topic_dir).rglob("*.katar")
+                ]
+            )
+            index_files = sorted(
+                [
+                    int(file.name.split(".")[0])
+                    for file in Path(topic_dir).rglob("*.index")
+                ]
+            )
+            timeindex_files = sorted(
+                [
+                    int(file.name.split(".")[0])
+                    for file in Path(topic_dir).rglob("*.timeindex")
+                ]
+            )
+        except Exception as e:
+            logger.exception(event="Failed to retrieve segments")
+            return []
+
+        try:
+            assert katar_files == index_files and katar_files == timeindex_files
+        except Exception as e:
+            logger.exception(event="Missing segments")
+            return []
+
+        return katar_files

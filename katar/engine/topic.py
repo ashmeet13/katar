@@ -5,6 +5,7 @@ from pathlib import Path
 
 from katar.engine.indexfile import IndexFile
 from katar.engine.logsfile import LogsFile
+from katar.engine.managers.read_controller import ReadController
 from katar.engine.managers.write_controller import WriteController
 from katar.logger import logger
 from katar.settings import KATAR_DIR
@@ -96,5 +97,16 @@ class Topic:
         )
         self.write_controller.setup()
 
+        self.read_controller = ReadController(
+            topic_dir_path=self.topic_dir_path,
+            max_segment_size=self.max_segment_size,
+            index_byte_gap=self.index_byte_gap,
+        )
+
+        self.read_controller.setup()
+
     def append(self, payload):
         self.write_controller.write(payload)
+
+    def read(self, offset):
+        self.read_controller.read(offset)

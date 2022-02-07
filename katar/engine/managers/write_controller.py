@@ -45,6 +45,14 @@ class WriteController:
 
         return err
 
+    """
+    Change the system to take the last log index - then from there iterate
+    over the katar log file to calculate how many bytes from that index have been added.
+
+    That is my "log index tracker" - everytime a write request comes add to this. If this
+    "tracker" crossed max limit - write the index and reset the tracker.
+    """
+
     def setup(self):
         err = self._set_current_segment()
         if err:
@@ -53,6 +61,9 @@ class WriteController:
         self.track_segment()
         self.offset = self.katar_interactor.get_current_offset()
         self.last_index_location = self.index_interactor.get_last_location()
+        self.current_index_gap = self.katar_interactor.get_size_from_location(
+            self.last_index_location
+        )
 
     def track_segment(self):
         self.segment_size = self.katar_interactor.set_tracking_file(
@@ -98,20 +109,13 @@ class WriteController:
         except Exception as e:
             raise e
 
-        if (new_segment_size - self.last_index_location) > self.index_byte_gap:
+        self.current_index_gap += len(log)
+        if self.current_index_gap > self.index_byte_gap:
             logger.info(event="Inserting index", offset=self.offset)
             index = self._create_index(log_location)
             self.index_interactor.write(index, len(index))
             self.last_index_location = new_segment_size
-
-        print(
-            self.base_offset,
-            self.max_segment_size,
-            self.index_byte_gap,
-            self.segment_size,
-            new_segment_size,
-            len(log),
-        )
+            self.current_index_gap = 0
 
         self.segment_size = new_segment_size
         if self.segment_size > self.max_segment_size:
@@ -119,3 +123,7 @@ class WriteController:
             self.base_offset = self.base_offset + self.offset
             self.track_segment()
             self.offset = self.katar_interactor.get_current_offset()
+            self.last_index_location = self.index_interactor.get_last_location()
+            self.current_index_gap = self.katar_interactor.get_size_from_location(
+                self.last_index_location
+            )
