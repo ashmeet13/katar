@@ -109,4 +109,21 @@ class Topic:
         self.write_controller.write(payload)
 
     def read(self, offset):
-        self.read_controller.read(offset)
+        import time
+
+        st = time.time()
+        log = self.read_controller.read(offset)
+        et = time.time()
+        assert log["data"] == offset
+
+        return et - st
+
+    def read_diff(self, offset):
+        import time
+
+        st = time.time()
+        log = self.read_controller.read_diff(offset)
+        et = time.time()
+        assert log["data"] == offset
+
+        return et - st

@@ -37,14 +37,17 @@ class IndexInteractor(BaseInteractor):
 
     def find_location(self, offset, base_offset):
         target = offset - base_offset
-        print()
-        print("Trying to find -", target)
-        print()
         with open(self.tracking_file, "rb") as reader:
             low_offset_bytes = reader.read(4)
             low_offset = int_from_bytes(low_offset_bytes)
 
-            reader.seek(-8, 2)
+            try:
+                reader.seek(-8, 2)
+            except Exception as e:
+                logger.info("Not many entries in index")
+                reader.seek(4, 0)
+                low_offset_location = int_from_bytes(reader.read(4))
+                return low_offset_location
             high_offset_bytes = reader.read(4)
             high_offset = int_from_bytes(high_offset_bytes)
 
@@ -61,8 +64,6 @@ class IndexInteractor(BaseInteractor):
                     reader.seek(mid_location, 0)
                     mid_offset = int_from_bytes(reader.read(4))
 
-                    print("Before", low_location, mid_location, high_location)
-                    print(target, mid_offset)
                     if target == mid_offset:
                         return int_from_bytes(reader.read(4))
                     elif target > mid_offset:
@@ -70,7 +71,7 @@ class IndexInteractor(BaseInteractor):
                     elif target < mid_offset:
                         high_location = mid_location - 8
 
-                    print("After", low_location, mid_location, high_location)
+                    # print("After", low_location, mid_location, high_location)
 
-                reader.seek(high_location)
+                reader.seek(high_location + 4)
                 return int_from_bytes(reader.read(4))

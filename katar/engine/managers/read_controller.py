@@ -69,11 +69,19 @@ class ReadController:
             topic_dir=self.topic_dir_path, base_offset=self.base_offset
         )
 
+    def read_diff(self, offset):
+        self._find_base_offset(offset)
+        self.track_segment()
+
+        log = self.katar_interactor.get(offset, self.base_offset, start=0)
+        return log
+
     def read(self, offset):
         self._find_base_offset(offset)
         self.track_segment()
 
-        self.index_interactor.print()
-
         location = self.index_interactor.find_location(offset, self.base_offset)
-        print("Got Location -", location)
+
+        log = self.katar_interactor.get(offset, self.base_offset, start=location)
+
+        return log
