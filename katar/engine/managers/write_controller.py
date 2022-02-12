@@ -11,7 +11,7 @@ from katar.logger import logger
 
 
 class WriteController:
-    def __init__(self, topic_dir_path, max_segment_size, index_byte_gap) -> None:
+    def __init__(self, topic_dir_path: Path, max_segment_size, index_byte_gap) -> None:
         self.topic_dir_path: Path = topic_dir_path
         self.max_segment_size: int = max_segment_size
         self.index_byte_gap = index_byte_gap
@@ -44,14 +44,6 @@ class WriteController:
                 err = True
 
         return err
-
-    """
-    Change the system to take the last log index - then from there iterate
-    over the katar log file to calculate how many bytes from that index have been added.
-
-    That is my "log index tracker" - everytime a write request comes add to this. If this
-    "tracker" crossed max limit - write the index and reset the tracker.
-    """
 
     def setup(self):
         err = self._set_current_segment()
