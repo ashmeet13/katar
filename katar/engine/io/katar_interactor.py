@@ -3,6 +3,7 @@ from functools import partial
 from pathlib import Path
 
 from katar.engine.io.base_interactor import BaseInteractor
+from katar.engine.serializers import BaseSerializer
 from katar.engine.utils import int_from_bytes, int_to_bytes
 from katar.logger import logger
 
@@ -47,13 +48,14 @@ class KatarInteractor(BaseInteractor):
 
                 print(length, payload_bytes)
 
-    def get(self, offset, base_offset, start=0):
+    def get(self, offset, base_offset, serializer: BaseSerializer, start=0):
         target = offset - base_offset
         with open(self.tracking_file, "rb") as log_reader:
             log_reader.seek(start)
             for chunk in iter(partial(log_reader.read, 4), b""):
                 log_length = int_from_bytes(chunk)
                 log_in_bytes = log_reader.read(log_length)
-                log = json.loads(log_in_bytes)
+                log = serializer.deserialize(log_in_bytes)
                 if log["offset"] == target:
                     return log["payload"]
+        return None

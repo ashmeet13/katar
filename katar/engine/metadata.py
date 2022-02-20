@@ -2,6 +2,7 @@ import json
 import traceback
 from pathlib import Path
 
+from katar.engine.serializers import BaseSerializer, serializers
 from katar.logger import logger
 
 
@@ -11,20 +12,24 @@ class Metadata:
         topic_dir: Path,
         max_segment_size: int = 2 ** 30,
         index_byte_gap: int = 1024,
+        serializer: BaseSerializer = serializers["JSONSerializer"](),
     ) -> None:
         self.metadata_path = topic_dir
         self.max_segment_size = max_segment_size
         self.index_byte_gap = index_byte_gap
+        self.serializer = serializer
 
     def _get_metadata(self):
         return {
             "max_segment_size": str(self.max_segment_size),
             "index_byte_gap": str(self.index_byte_gap),
+            "serializer": str(self.serializer),
         }
 
     def _build_metadata(self, metadata):
         self.max_segment_size = int(metadata["max_segment_size"])
         self.index_byte_gap = int(metadata["index_byte_gap"])
+        self.serializer = serializers[metadata["serializer"]]()
 
     def save(self):
         err = False
@@ -53,12 +58,15 @@ class Metadata:
             err = True
         return err
 
-    def update(self, max_segment_size=None, index_byte_gap=None):
+    def update(self, max_segment_size=None, index_byte_gap=None, serializer=None):
         if max_segment_size:
             self.max_segment_size = max_segment_size
 
         if index_byte_gap:
             self.index_byte_gap = index_byte_gap
+
+        if serializer:
+            self.serializer = serializer
 
         self.save()
 
