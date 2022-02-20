@@ -118,6 +118,7 @@ class WriteController:
 
     def create_new_segment(self):
         self.base_offset = self.base_offset + self.offset
+        logger.info(event=f"New Segment Base Offset = {self.base_offset}")
         self.track_segment()
         self.offset = self.katar_interactor.get_current_offset()
         self.last_index_location = self.index_interactor.get_last_location()
@@ -127,12 +128,24 @@ class WriteController:
 
     def write(self, payload):
         timestamp = int(time.time())
-        logger.info(event="Log Insertion Request", message=payload)
+        logger.info(
+            event="Log Insertion Request",
+            message=payload,
+            base_offset=self.base_offset,
+            offset=self.offset,
+        )
         log_length, log_location = self.write_log(payload=payload, timestamp=timestamp)
+        logger.info("Log Inserted", log_length=log_length, log_location=log_location)
 
         self.current_index_gap += log_length
         if self.current_index_gap > self.index_byte_gap:
-            logger.info(event="Inserting index", offset=self.offset)
+            logger.info(
+                event="Inserting index",
+                offset=self.offset - 1,
+                last_index_location=self.last_index_location,
+                current_index_gap=self.current_index_gap,
+                index_byte_gap=self.index_byte_gap,
+            )
             self.write_index(log_location=log_location)
 
         if self.segment_size > self.max_segment_size:

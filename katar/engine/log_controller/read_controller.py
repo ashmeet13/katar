@@ -51,6 +51,8 @@ class ReadController:
 
         location = self.index_interactor.find_location(offset, self.base_offset)
 
-        log = self.katar_interactor.get(offset, self.base_offset, start=location)
+        log = self.katar_interactor.get(
+            offset, self.base_offset, serializer=self.serializer, start=location
+        )
 
         return log
