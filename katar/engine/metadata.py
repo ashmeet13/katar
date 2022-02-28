@@ -1,6 +1,7 @@
 import json
 import traceback
 from pathlib import Path
+from typing import Union
 
 from katar.engine.serializers import BaseSerializer, serializers
 from katar.logger import logger
@@ -12,14 +13,28 @@ class Metadata:
         topic_dir: Path,
         max_segment_size: int = 2 ** 30,
         index_byte_gap: int = 1024,
-        serializer: BaseSerializer = serializers["JSONSerializer"](),
+        serializer: Union[BaseSerializer, str] = serializers["JSONSerializer"](),
     ) -> None:
-        self.metadata_path = topic_dir
+        self.metadata_path = topic_dir / "metadata.json"
+
+        if self._metadata_file_exists():
+            logger.info(event="Loading metadata from file")
+            self.read_from_file()
+        else:
+            logger.info(event="Creating metadata dictionary")
+            self.set_parameters(max_segment_size, index_byte_gap, serializer)
+            self.save()
+
+    def set_parameters(self, max_segment_size, index_byte_gap, serializer):
         self.max_segment_size = max_segment_size
         self.index_byte_gap = index_byte_gap
-        self.serializer = serializer
 
-    def _get_metadata(self):
+        if type(serializer) == str:
+            self.serializer = serializers[serializer]()
+        else:
+            self.serializer = serializer
+
+    def get_metadata(self):
         return {
             "max_segment_size": str(self.max_segment_size),
             "index_byte_gap": str(self.index_byte_gap),
@@ -31,11 +46,14 @@ class Metadata:
         self.index_byte_gap = int(metadata["index_byte_gap"])
         self.serializer = serializers[metadata["serializer"]]()
 
+    def _metadata_file_exists(self):
+        return self.metadata_path.is_file()
+
     def save(self):
         err = False
         try:
             with open(self.metadata_path, "w") as outfile:
-                json.dump(self._get_metadata(), outfile)
+                json.dump(self.get_metadata(), outfile)
         except Exception as e:
             message = "Failed to create topic folder"
             trace = traceback.format_exc()
@@ -44,7 +62,7 @@ class Metadata:
             err = True
         return err
 
-    def read(self):
+    def read_from_file(self):
         err = False
         try:
             with open(self.metadata_path, "r") as readfile:
@@ -57,6 +75,20 @@ class Metadata:
             logger.error(event=message, error=error, stacktrace=trace)
             err = True
         return err
+
+    def reset(
+        self,
+        max_segment_size: int = 2 ** 30,
+        index_byte_gap: int = 1024,
+        serializer: Union[BaseSerializer, str] = serializers["JSONSerializer"](),
+    ) -> None:
+        self.max_segment_size = max_segment_size
+        self.index_byte_gap = index_byte_gap
+        if type(serializer) == str:
+            self.serializer = serializers[serializer]()
+        else:
+            self.serializer = serializer
+        self.save()
 
     def update(self, max_segment_size=None, index_byte_gap=None, serializer=None):
         if max_segment_size:
@@ -72,11 +104,3 @@ class Metadata:
 
     def delete(self):
         self.metadata_path.unlink(missing_ok=True)
-
-    def initalise(self):
-        if self.metadata_path.exists():
-            logger.info(event="Loading metadata from file")
-            self.read()
-            return
-
-        logger.info(event="Setting metadata to default values")

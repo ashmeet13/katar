@@ -46,8 +46,15 @@ class ReadController:
         )
 
     def read(self, offset):
-        self._find_base_offset(offset)
+        if offset is None:
+            self.base_offset = self.base_offsets[-1]
+        else:
+            self._find_base_offset(offset)
+
         self.track_segment()
+
+        if offset is None:
+            offset = self.katar_interactor.get_current_offset() - 1
 
         location = self.index_interactor.find_location(offset, self.base_offset)
 
@@ -55,4 +62,4 @@ class ReadController:
             offset, self.base_offset, serializer=self.serializer, start=location
         )
 
-        return log
+        return offset, log

@@ -57,6 +57,6 @@ class Topic:
     def append(self, payload):
         self.write_controller.write(payload)
 
-    def read(self, offset):
+    def read(self, offset=None):
         log = self.read_controller.read(offset)
         return log
