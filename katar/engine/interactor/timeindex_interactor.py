@@ -1,10 +1,11 @@
 from pathlib import Path
 
-from katar.engine.io.base_interactor import BaseInteractor
+from katar.engine.interactor.base_interactor import BaseInteractor
 from katar.logger import logger
 
 
+# TODO: Implement TimeIndex for log search
 class TimeindexInteractor(BaseInteractor):
     def __init__(self) -> None:
         super().__init__()
-        self.interactor_type = "timeindex"
+        pass

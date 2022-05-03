@@ -1,7 +1,8 @@
 from functools import partial
 from pathlib import Path
 
-from katar.engine.io.base_interactor import BaseInteractor
+from katar.constants import *
+from katar.engine.interactor.base_interactor import BaseInteractor
 from katar.engine.utils import int_from_bytes, int_to_bytes
 from katar.logger import logger
 
@@ -13,7 +14,7 @@ def round_to_eight(x, base=8):
 class IndexInteractor(BaseInteractor):
     def __init__(self) -> None:
         super().__init__()
-        self.interactor_type = "index"
+        self.interactor_type = InteractorTypes.Index
 
     def get_last_location(self):
         location = 0
@@ -24,7 +25,7 @@ class IndexInteractor(BaseInteractor):
 
         return location
 
-    def print(self):
+    def debug_print(self):
         print("Printing contents of file -", self.tracking_file)
         with open(self.tracking_file, "rb") as reader:
             for chunk in iter(partial(reader.read, 4), b""):
