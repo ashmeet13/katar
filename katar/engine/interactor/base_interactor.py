@@ -15,7 +15,7 @@ class BaseInteractor:
         3. TimeIndex [Not yet implemented]
         """
         self.topic_dir: Path = metadata[MetadataKeys.TopicPath]
-        self.interactor_type: str = ""
+        self.interactor_type: str = "base"
         self.tracking_file: Path = None
         self.filesize: int = 0
 
