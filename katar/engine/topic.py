@@ -1,62 +1,61 @@
 import json
 import traceback
 from pathlib import Path
+from typing import Text
 
-from katar.engine.log_controller.read_controller import ReadController
-from katar.engine.log_controller.write_controller import WriteController
+from katar.constants import *
+from katar.engine.managers.read_manager import ReadManager
+from katar.engine.managers.write_manager import WriteManager
 from katar.engine.metadata import Metadata
 from katar.logger import logger
 from katar.settings import KATAR_DIR
 
-# from katar.engine.managers.write_manager import ReadManager
-
 
 class Topic:
-    def __init__(self, topicname) -> None:
-        super().__init__()
-        self.topicname = topicname
+    def __init__(self, metadata: Metadata) -> None:
+        """Initalises a new object to wrap writing and reading
+        from a topic.
 
-        self.topic_dir_path: Path = KATAR_DIR / self.topicname
-        if not self.topic_dir_path.is_dir():
-            err = self._create_topic_folder(KATAR_DIR / self.topicname)
-            if err:
-                return
+        Caching will be implemented here.
 
-    def _create_topic_folder(self, topic_dir_path):
-        err = False
-
-        try:
-            Path(topic_dir_path).mkdir(parents=True, exist_ok=True)
-        except Exception as e:
-            message = "Failed to create topic folder"
-            trace = traceback.format_exc()
-            error = str(e)
-            logger.error(event=message, error=error, stacktrace=trace)
-            err = True
-
-        return err
-
-    def setup_write_controller(self):
-        self.write_controller = WriteController(
-            topic_dir_path=self.topic_dir_path, metadata=self.metadata
-        )
-        self.write_controller.setup()
-
-    def setup_read_controller(self):
-        self.read_controller = ReadController(
-            topic_dir_path=self.topic_dir_path, metadata=self.metadata
-        )
-
-        self.read_controller.setup()
-
-    def initalise(self, metadata: Metadata):
+        Args:
+            metadata (Metadata): Metadata object storing everything necessary
+            for Read and Write to work.
+        """
         self.metadata = metadata
-        self.setup_write_controller()
-        self.setup_read_controller()
+        self.topic_dir: Path = KATAR_DIR / self.metadata[MetadataKeys.Topic]
+        if self.topic_dir.is_dir():
+            self._create_topic_directory()
 
-    def append(self, payload):
-        self.write_controller.write(payload)
+        self.metadata.add(MetadataKeys.TopicPath, self.topic_dir)
 
-    def read(self, offset):
-        log = self.read_controller.read(offset)
-        return log
+        self.write_manager = WriteManager(metadata=self.metadata).setup()
+        self.read_manager = ReadManager(metadata=self.metadata).setup()
+
+    def _create_topic_directory(self):
+        """Creates a direction if a directory for the requested
+        topic does not exist. This would be in the case of a new topic.
+        """
+        Path(self.topic_dir).mkdir(parents=True, exist_ok=True)
+
+    def append(self, payload: bytes):
+        """Add a log to the topic storage
+
+        Args:
+            payload (bytes): Log payload as recieved from the client
+        """
+        self.write_manager.write(payload)
+
+    def scan(self, offset: int) -> bytes:
+        """Scan the topic for getting the requested data at the offset.
+        Currently only supports search by offset.
+
+        Time based search will be added.
+
+        Args:
+            offset (int): Offset of the required Log
+
+        Returns:
+            bytes: Read log in bytes
+        """
+        return self.read_manager.read(offset)
