@@ -1,0 +1,25 @@
+syntax = "proto3";
+package katar;
+
+option go_package = "github.com/ashmeet13/katar/katar/pb";
+
+service Katar {
+    rpc Publish(PublishRequest) returns (PublishResponse) {}
+}
+
+message SuccessResponse {}
+message FailureResponse {
+    string Reason = 1;
+}
+
+message PublishRequest {
+    string Topic = 1;
+    bytes Payload = 2;
+}
+
+message PublishResponse {
+    oneof Response {
+        SuccessResponse Success = 1;
+        FailureResponse Failure = 2;
+    }
+}
